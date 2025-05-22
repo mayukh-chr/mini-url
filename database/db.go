@@ -3,18 +3,22 @@ package database
 import (
 	"database/sql"
 	"log"
+	"fmt"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
 var DB *sql.DB
 
+// creates db if it doesn't exist.
 func InitDB(filepath string) {
 	var err error
 	DB, err = sql.Open("sqlite3", filepath)
 	if err != nil {
 		log.Fatalf("Failed to open database: %v", err)
 	}
+	
+	fmt.Println("db opened")
 
 	createTable := `
 	CREATE TABLE IF NOT EXISTS urls (
