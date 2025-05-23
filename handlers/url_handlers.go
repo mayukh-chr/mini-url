@@ -4,31 +4,53 @@ import (
 	"database/sql"
 	"encoding/json"
 	// "fmt"
+
+	// "fmt"
 	"net/http"
 
-	"github.com/gorilla/mux"
 	"urlshortner/database"
 	"urlshortner/models"
+	"urlshortner/utils"
+
+	"github.com/gorilla/mux"
 )
 
 
-func CreateShortURL(w http.ResponseWriter, r *http.Request){
+func CreateShortURL(w http.ResponseWriter, r *http.Request) {
 	var u models.URL
-	if err := json.NewDecoder(r.Body).Decode(&u); err != nil{
+	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
 		http.Error(w, "invalid input", http.StatusBadRequest)
-		return 
+		return
+	}
+
+	// If no short code is provided, generate a unique one
+	if u.ShortCode == "" {
+		u.ShortCode = utils.GenerateUniqueCode(6) // You can change the length if needed
+	} else {
+		// Check if the provided code already exists
+		var exists bool
+		err := database.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM urls WHERE short_code = ?)", u.ShortCode).Scan(&exists)
+		if err != nil {
+			http.Error(w, "database error", http.StatusInternalServerError)
+			return
+		}
+		if exists {
+			http.Error(w, "short code already exists", http.StatusConflict)
+			return
+		}
 	}
 
 	stmt := `INSERT INTO urls (url, short_code) VALUES (?, ?)`
-
 	_, err := database.DB.Exec(stmt, u.URL, u.ShortCode)
-
 	if err != nil {
 		http.Error(w, "error inserting URL", http.StatusInternalServerError)
 		return
 	}
+
 	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]string{"short_code": u.ShortCode})
 }
+
 
 func GetOriginalURL(w http.ResponseWriter, r* http.Request){
 	shortCode := mux.Vars(r)["code"]

@@ -7,14 +7,15 @@ import (
 	
 	"urlshortner/database"
 	"urlshortner/handlers"
-
+	"urlshortner/utils"
+	
 	"github.com/gorilla/mux"
 )
 
 func main() {
 	fmt.Println("Starting server...")
 	database.InitDB("urlshortener.db")
-
+	utils.PrintAllURLs()
 	r := mux.NewRouter()
 
 	r.HandleFunc("/shorten", handlers.CreateShortURL).Methods("POST")
