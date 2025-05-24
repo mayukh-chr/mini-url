@@ -20,7 +20,7 @@ func main() {
 
 	r.HandleFunc("/shorten", handlers.CreateShortURL).Methods("POST")
 	r.HandleFunc("/u/{code}", handlers.GetOriginalURL).Methods("GET")
-	r.HandleFunc("/u/{code}", handlers.UpdateShortURL).Methods("PUT")
+	r.HandleFunc("/u/{code}", handlers.UpdateShortCode).Methods("PUT")
 	r.HandleFunc("/u/{code}", handlers.DeleteShortURL).Methods("DELETE")
 	r.HandleFunc("/stats/{code}", handlers.GetStats).Methods("GET")
 

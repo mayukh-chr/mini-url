@@ -11,8 +11,9 @@ import (
 	"urlshortner/database"
 	"urlshortner/models"
 	"urlshortner/utils"
-
+	
 	"github.com/gorilla/mux"
+	"github.com/mattn/go-sqlite3"
 )
 
 
@@ -23,11 +24,9 @@ func CreateShortURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// If no short code is provided, generate a unique one
 	if u.ShortCode == "" {
 		u.ShortCode = utils.GenerateUniqueCode(6) // You can change the length if needed
 	} else {
-		// Check if the provided code already exists
 		var exists bool
 		err := database.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM urls WHERE short_code = ?)", u.ShortCode).Scan(&exists)
 		if err != nil {
@@ -75,22 +74,41 @@ func GetOriginalURL(w http.ResponseWriter, r* http.Request){
 	http.Redirect(w, r, url, http.StatusFound)
 }
 
-func UpdateShortURL(w http.ResponseWriter, r *http.Request) {
-	shortCode := mux.Vars(r)["code"]
-	var u models.URL
-	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
-		http.Error(w, "Invalid input", http.StatusBadRequest)
-		return
-	}
+func UpdateShortCode(w http.ResponseWriter, r *http.Request) {
+    // Parse input JSON
+    var payload struct {
+        URL       string `json:"url"`
+        ShortCode string `json:"short_code"`
+    }
 
-	stmt := `UPDATE urls SET url = ?, updated_at = CURRENT_TIMESTAMP WHERE short_code = ?`
-	_, err := database.DB.Exec(stmt, u.URL, shortCode)
-	if err != nil {
-		http.Error(w, "Update failed", http.StatusInternalServerError)
-		return
-	}
-	w.WriteHeader(http.StatusOK)
+    if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+        http.Error(w, "Invalid input", http.StatusBadRequest)
+        return
+    }
+
+    // Prepare update statement: update short_code where url matches
+    stmt := `UPDATE urls SET short_code = ?, updated_at = CURRENT_TIMESTAMP WHERE url = ?`
+
+    res, err := database.DB.Exec(stmt, payload.ShortCode, payload.URL)
+    if err != nil {
+        // Check for UNIQUE constraint violation
+        if sqliteErr, ok := err.(sqlite3.Error); ok && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
+            http.Error(w, "Short code already exists", http.StatusConflict)
+            return
+        }
+        http.Error(w, "Update failed", http.StatusInternalServerError)
+        return
+    }
+
+    rowsAffected, err := res.RowsAffected()
+    if err != nil || rowsAffected == 0 {
+        http.Error(w, "URL not found or no changes made", http.StatusNotFound)
+        return
+    }
+
+    w.WriteHeader(http.StatusOK)
 }
+
 
 func DeleteShortURL(w http.ResponseWriter, r *http.Request) {
 	shortCode := mux.Vars(r)["code"]
