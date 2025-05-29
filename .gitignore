@@ -1,2 +1,4 @@
 urlshortener.db
 test.py
+frontend/build
+frontend/node_modules

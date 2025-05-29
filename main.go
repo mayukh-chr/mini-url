@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	
+
 	"urlshortner/database"
 	"urlshortner/handlers"
 	"urlshortner/utils"
-	
+
 	"github.com/gorilla/mux"
 )
 
@@ -18,6 +18,7 @@ func main() {
 	utils.PrintAllURLs()
 	r := mux.NewRouter()
 
+	r.HandleFunc("/shorten", handlers.ServeShortenPage).Methods("GET")
 	r.HandleFunc("/shorten", handlers.CreateShortURL).Methods("POST")
 	r.HandleFunc("/u/{code}", handlers.GetOriginalURL).Methods("GET")
 	r.HandleFunc("/u/{code}", handlers.UpdateShortCode).Methods("PUT")

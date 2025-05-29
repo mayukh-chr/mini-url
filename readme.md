@@ -6,8 +6,6 @@ curl -X POST http://localhost:8080/shorten -H "Content-Type: application/json" -
 
 redirects http://localhost:8080/u/exmp to example.com
 
-check gemini for more details//
-
 curl -v http://localhost:8080/u/exmp
 
 shows where the short link redirects to, returns 404 if no redirects available
