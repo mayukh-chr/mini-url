@@ -1,4 +1,3 @@
-// d:\Code\repos\golang-tutorial\url-shortner\utils\utils.go
 package utils
 
 import (
@@ -20,7 +19,6 @@ func generateRandomCode(length int) string {
 	return string(b)
 }
 
-// Exported version for use in handlers
 func GenerateUniqueCode(length int) string {
 	for {
 		code := generateRandomCode(length)
