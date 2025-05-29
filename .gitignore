@@ -1,4 +1,52 @@
+# Database files
 urlshortener.db
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Python files
 test.py
+__pycache__/
+*.pyc
+
+# Frontend build artifacts
 frontend/build
 frontend/node_modules
+
+# Go build artifacts
+main
+*.exe
+/build
+/dist
+
+# Dependencies
+/vendor
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+
+# Temporary files
+/tmp
+/temp
+
+# Coverage reports
+coverage.out
+coverage.html
+
+# Heroku
+.heroku/

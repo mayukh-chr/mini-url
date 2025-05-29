@@ -1,14 +1,20 @@
 package utils
 
 import (
-	"math/rand"
-	"time"
-	"urlshortner/database"
 	"fmt"
 	"log"
+	"math/rand"
+	"net/url"
+	"regexp"
+	"strings"
+	"time"
+
+	"urlshortner/database"
 )
 
 const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+var urlRegex = regexp.MustCompile(`^https?://[^\s/$.?#].[^\s]*$`)
 
 func generateRandomCode(length int) string {
 	rand.Seed(time.Now().UnixNano())
@@ -20,28 +26,84 @@ func generateRandomCode(length int) string {
 }
 
 func GenerateUniqueCode(length int) string {
-	for {
+	maxAttempts := 10
+	for attempt := 0; attempt < maxAttempts; attempt++ {
 		code := generateRandomCode(length)
 		var exists bool
 		err := database.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM urls WHERE short_code = ?)", code).Scan(&exists)
 		if err != nil {
-			// Log error and fallback
+			log.Printf("Error checking code uniqueness: %v", err)
 			continue
 		}
 		if !exists {
 			return code
 		}
 	}
+	// If we can't find a unique code, increase length
+	return GenerateUniqueCode(length + 1)
 }
 
-//testing 
+// IsValidURL validates if the provided string is a valid URL
+func IsValidURL(urlStr string) bool {
+	if urlStr == "" {
+		return false
+	}
 
+	// Basic regex check
+	if !urlRegex.MatchString(urlStr) {
+		return false
+	}
+
+	// Parse URL to ensure it's well-formed
+	parsedURL, err := url.Parse(urlStr)
+	if err != nil {
+		return false
+	}
+
+	// Ensure scheme and host are present
+	if parsedURL.Scheme == "" || parsedURL.Host == "" {
+		return false
+	}
+
+	return true
+}
+
+// IsValidShortCode validates short code format
+func IsValidShortCode(code string) bool {
+	if len(code) < 3 || len(code) > 20 {
+		return false
+	}
+
+	// Only allow alphanumeric characters
+	for _, char := range code {
+		if !((char >= 'a' && char <= 'z') ||
+			(char >= 'A' && char <= 'Z') ||
+			(char >= '0' && char <= '9')) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// SanitizeURL cleans and normalizes URL
+func SanitizeURL(urlStr string) string {
+	urlStr = strings.TrimSpace(urlStr)
+
+	// Add http:// if no scheme is provided
+	if !strings.HasPrefix(urlStr, "http://") && !strings.HasPrefix(urlStr, "https://") {
+		urlStr = "http://" + urlStr
+	}
+
+	return urlStr
+}
+
+// PrintAllURLs - testing function
 func PrintAllURLs() {
-	database.InitDB("urlshortener.db")
-
 	rows, err := database.DB.Query("SELECT id, url, short_code, access_count FROM urls")
 	if err != nil {
-		log.Fatalf("Error querying database: %v\n", err)
+		log.Printf("Error querying database: %v\n", err)
+		return
 	}
 	defer rows.Close()
 
