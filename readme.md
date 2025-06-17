@@ -254,8 +254,6 @@ CREATE TABLE urls (
 4. Push to branch (`git push origin feature/amazing-feature`)
 5. Open Pull Request
 
-## Test
 
-Just checking if git works on my new machine
 
 
